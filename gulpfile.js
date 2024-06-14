@@ -1,5 +1,3 @@
-const fileinclude = require('gulp-file-include');
-
 const { src, dest, parallel, series, watch } = require('gulp'),
     browserSync = require('browser-sync').create(),
     sass = require('gulp-sass')(require('sass')),
@@ -7,7 +5,7 @@ const { src, dest, parallel, series, watch } = require('gulp'),
     webpCss = require('gulp-webpcss'),
     ttf2woff2 = require('gulp-ttf2woff2'),
     ttf2woff = require('gulp-ttf2woff'),
-    webp = require('gulp-webp'),
+    webp = require('imagemin-webp'),
     webpHtml = require('gulp-webp-html');
     fileInclude = require('gulp-file-include');
     imagemin = require('gulp-imagemin'),
@@ -25,18 +23,18 @@ const paths = {
         fonts: 'dist/fonts'
     },
     src: {
-        html: ['./**/*.html', '!node_modules/**', '!dist/**'],
-        scss: ['scss/**/*.scss', '!dist/**'],
-        js: ['js/**/*.js', '!node_modules/**', '!dist/**'],
-        img: 'img/**',
-        fonts: 'fonts/**'
+        html: ['src/**/*.html', '!node_modules/**', '!dist/**'],
+        scss: ['src/scss/**/*.scss', '!dist/**'],
+        js: ['src/js/**/*.js', '!node_modules/**', '!dist/**'],
+        img: 'src/img/**',
+        fonts: 'src/fonts/**'
     },
     watch: {
-        html: ['./**/*.html', '!dist/**'],
-        scss: 'scss/**/*.scss',
-        js: 'js/**/*.js',
-        img: 'img/**',
-        fonts: 'fonts/**'
+        html: ['src/**/*.html', '!dist/**'],
+        scss: 'src/scss/**/*.scss',
+        js: 'src/js/**/*.js',
+        img: 'src/img/**',
+        fonts: 'src/fonts/**'
     }
 }
 
@@ -44,6 +42,13 @@ const paths = {
 
 async function clean() {
     await fs.emptyDir('dist');
+    if (!(await fs.pathExists("src/"))) {
+        await fs.ensureFile('src/index.html')
+        await fs.emptyDir('src/scss');
+        await fs.emptyDir('src/fonts');
+        await fs.emptyDir('src/img');
+        await fs.emptyDir('src/js');
+    }
 }
 
 function browsersync() {
@@ -75,7 +80,7 @@ async function css() {
 async function js() {
     await fs.emptyDir(paths.dist.js);
     return src(paths.src.js)
-        .pipe(fileinclude())
+        .pipe(fileInclude())
         .pipe(babel({
             presets: ['@babel/env']
         }))
@@ -88,9 +93,11 @@ async function img() {
     await fs.emptyDir(paths.dist.img);
     return src(paths.src.img)
         .pipe(
-            webp({
-                quality: 70
-            })
+            imagemin([
+                webp({
+                    quality: 70
+                })
+            ])      
         )
         .pipe(dest(paths.dist.img))
         .pipe(src(paths.src.img))
